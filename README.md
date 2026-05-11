@@ -9,9 +9,13 @@
 
 > **Modern 3D anatomical workbench**: real BodyParts3D meshes + scientific imaging metaphors + open architecture.
 
-[**Live demo →**](https://toby-bridges.github.io/brain-architecture-studio/) · [Killer demo (v0.1.0 release)](https://github.com/toby-bridges/brain-architecture-studio/releases/tag/v0.1.0)
+[**Live demo →**](https://toby-bridges.github.io/brain-architecture-studio/) · [v0.1.0 release notes](https://github.com/toby-bridges/brain-architecture-studio/releases/tag/v0.1.0)
+
+![demo](https://github.com/toby-bridges/brain-architecture-studio/releases/download/v0.1.0/killer-demo-small.gif)
 
 A browser-based 3D brain explorer for developers, neuroscience students, and educators who want **real anatomy + interactive material metaphors + an open, forkable codebase**. Not a textbook tour (that's [brainfacts.org](https://brainfacts.org/3d-brain)) — a lab notebook.
+
+> 36-second tour above: region selection → deep-structure occluding shell → 4 imaging modes (T1 / fMRI / DTI / Histology) → cross-section → dual-view comparison. [Full MP4 (1.7MB)](https://github.com/toby-bridges/brain-architecture-studio/releases/download/v0.1.0/killer-demo.mp4)
 
 ## What's in here
 
