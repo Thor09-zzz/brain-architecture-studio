@@ -1,0 +1,14 @@
+node_modules/
+dist/
+verification/
+docs/PRD.md
+.tmp/
+
+.DS_Store
+*.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel
