@@ -7,16 +7,21 @@ import type { RegionItem } from "../../data/regions";
 export function CaptureContext({
   glRef,
   sceneRef,
+  cameraRef,
 }: {
   glRef: React.MutableRefObject<WebGLRenderer | null>;
   sceneRef: React.MutableRefObject<Scene | null>;
+  cameraRef?: React.MutableRefObject<import("three").Camera | null>;
 }) {
-  const { gl, scene } = useThree();
+  const { gl, scene, camera } = useThree();
   useEffect(() => {
     glRef.current = gl;
     sceneRef.current = scene;
+    if (cameraRef) {
+      cameraRef.current = camera;
+    }
     gl.localClippingEnabled = true;
-  }, [gl, scene, glRef, sceneRef]);
+  }, [gl, scene, camera, glRef, sceneRef, cameraRef]);
   return null;
 }
 

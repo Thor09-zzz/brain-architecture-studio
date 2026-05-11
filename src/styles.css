@@ -600,12 +600,33 @@ a {
   margin: 18px 0 22px;
 }
 
-.comparison-view {
+.comparison-stage-canvas {
+  /**
+   * Workaround for drei v10 View.js:19 — its isOffscreen check compares
+   * trackRect.left to canvasSize.width (not canvasSize.left + .width), so
+   * a canvas that's offset right of viewport-left mistakenly marks any
+   * tracked div past `canvasSize.width` as offscreen and skips render.
+   * Fix: span the canvas to full viewport via position:fixed; scissoring
+   * inside the View still confines actual draws to the tracked div bbox.
+   */
+  position: fixed !important;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.comparison-cell {
   position: relative;
+  z-index: 1;
   border: 1px solid rgba(85, 75, 61, 0.16);
   border-radius: 10px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.5);
+}
+
+.comparison-view-3d {
+  width: 100%;
+  height: 100%;
 }
 
 .comparison-view-label {

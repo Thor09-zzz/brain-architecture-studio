@@ -5,28 +5,6 @@ Issues discovered, not yet fixed. Updated 2026-05-11.
 
 Evidence basis: subagent inventory run on dev `http://127.0.0.1:5173/` (3 passes, 86 features each).
 
-## 🔴 Comparison Modal: only left brain renders
-
-**Symptom**: Click "Open Comparison View" → modal opens with 2 region labels and 2 placeholder divs, but only the **left `<View>` shows a 3D brain**. The right `<View>` stays as paper-cream background.
-
-**Reproduction**: Inventory `inv-84.png` shows it consistently across all 3 runs.
-
-**Suspect**: `src/components/ComparisonStage.tsx` mounts 1 `<Canvas eventSource>` + 2 `<View track={ref}>`. The right View's `track` ref likely points to a div that never gets a non-zero bounding box at the moment Canvas reads positions, OR drei v10's `<View>` requires an explicit camera per view (we share defaults).
-
-**Severity**: 🔴 — feature is the headline of the Comparison column but doesn't deliver.
-
-**Investigation start**: log `getBoundingClientRect` of both refs at modal open + check drei `<View>` v10 docs on shared cameras.
-
-## 🟡 Screenshot logs camera-type error
-
-**Symptom**: Click Screenshot → PNG downloads correctly with valid frame data, but `THREE.WebGLRenderer.render: camera is not an instance of THREE.Camera.` is logged to console.
-
-**Cause**: `BrainScene.tsx:64` line `gl.render(scene, gl.xr.isPresenting ? gl.xr.getCamera() : (gl as any).camera ?? scene)` falls back to passing `scene` as camera when `gl.camera` doesn't exist. Should grab the actual `useThree().camera`.
-
-**Severity**: 🟡 — output works, only log noise.
-
-**Fix sketch**: Capture camera ref via a `<CaptureContext>` similar to how `glRef` / `sceneRef` are captured, then use it in screenshot().
-
 ## 🟡 Occipital + Myelin Stain crash (intermittent)
 
 **Symptom**: 1 of 3 inventory runs hit `pageerror: Cannot read properties of null (reading 'alpha')` after clicking Occipital → Myelin Stain. White-screened the React tree, all subsequent clicks failed.
@@ -77,6 +55,8 @@ These are functional or cytoarchitectonic regions BodyParts3D doesn't ship as di
 
 ## Recently fixed (history)
 
+- **Comparison Modal right brain blank** (2026-05-11): Switched to drei HtmlView pattern (`<View>` outside Canvas + `<View.Port />` inside) with `<PerspectiveCamera makeDefault>` per view. Workaround for drei v10 `View.js:19` `isOffscreen` check which mis-compares `trackRect.left` to `canvasSize.width` instead of `canvasSize.left + .width`; resolved by giving canvas `position: fixed; inset: 0` so canvasSize spans full viewport. Both halves now render. Evidence: `verification/feat-comparison-fixed.png` (left Frontal gold + right Parietal green).
+- **Screenshot camera-type console error** (2026-05-11): Captured `cameraRef` via `<CaptureContext>` (alongside existing glRef/sceneRef), replaced `(gl as any).camera ?? scene` hack with `cameraRef.current`. Verified 0 camera/THREE errors via `scripts/verify-screenshot-fix.mjs`.
 - **Brainstem invisible by default** (2026-05-11): Brainstem region camera flipped from front-low view `[0, -1.6, 5]` to back-low view `[0, -0.3, -4.8]`; midbrain/pons/medulla camera updated. Now visible. Evidence: `verification/audit-brainstem-*.png`.
 - **Maximum update depth React loop** (2026-05-11): Removed `<Selection><Select>` wrapper from `@react-three/postprocessing`; bloom now uses pure `luminanceThreshold` selection. 0 console warnings vs previous 346 per session.
 - **3D Comparison stub → drei `<View>` integration** (2026-05-11): Replaced text-only modal with 1-Canvas + 2-View architecture. **Half-broken** (see 🔴 above) but architecturally correct.

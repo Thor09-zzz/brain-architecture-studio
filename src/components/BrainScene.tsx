@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { forwardRef, useImperativeHandle, useRef } from "react";
-import { Group, Scene, WebGLRenderer } from "three";
+import { Camera, Group, Scene, WebGLRenderer } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { RegionItem, ViewMode } from "../data/regions";
 import { BrainSceneInner } from "./BrainSceneInner";
@@ -33,6 +33,7 @@ export const BrainScene = forwardRef<BrainSceneHandle, BrainSceneProps>(function
   const groupRef = useRef<Group | null>(null);
   const glRef = useRef<WebGLRenderer | null>(null);
   const sceneRef = useRef<Scene | null>(null);
+  const cameraRef = useRef<Camera | null>(null);
 
   useImperativeHandle(
     ref,
@@ -46,13 +47,11 @@ export const BrainScene = forwardRef<BrainSceneHandle, BrainSceneProps>(function
       screenshot: () => {
         const gl = glRef.current;
         const scene = sceneRef.current;
-        if (!gl || !scene) {
+        const camera = cameraRef.current;
+        if (!gl || !scene || !camera) {
           return null;
         }
-        gl.render(
-          scene,
-          gl.xr.isPresenting ? gl.xr.getCamera() : (gl as any).camera ?? scene,
-        );
+        gl.render(scene, gl.xr.isPresenting ? gl.xr.getCamera() : camera);
         return gl.domElement.toDataURL("image/png");
       },
       exportGLB: () =>
@@ -94,6 +93,7 @@ export const BrainScene = forwardRef<BrainSceneHandle, BrainSceneProps>(function
         {...props}
         glRef={glRef}
         sceneRef={sceneRef}
+        cameraRef={cameraRef}
         groupRef={groupRef}
         controlsRef={controlsRef}
       />

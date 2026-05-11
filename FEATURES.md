@@ -41,7 +41,7 @@ Evidence basis: `.tmp/inventory.md` (86 features × Playwright screenshots in `v
 
 | Status | Feature | Code | Note |
 |---|---|---|---|
-| ⚠️ | Screenshot → PNG download | `BrainScene.tsx imperative.screenshot` | PNG saves correctly but logs `camera is not an instance of THREE.Camera` to console (cosmetic) — see KNOWN_ISSUES |
+| ✅ | Screenshot → PNG download | `BrainScene.tsx imperative.screenshot` | Uses captured `cameraRef`, no console errors (verified by `scripts/verify-screenshot-fix.mjs`) |
 | ✅ | GLB Export → .glb download | `BrainScene.tsx imperative.exportGLB` | Exports full brain assembly group via GLTFExporter |
 
 ## Comparison
@@ -49,7 +49,7 @@ Evidence basis: `.tmp/inventory.md` (86 features × Playwright screenshots in `v
 | Status | Feature | Code | Note |
 |---|---|---|---|
 | ✅ | Compare panel shows current region vs `region.comparison` | `App.tsx:430-453` | Static info card |
-| 🐞 | "Open Comparison View" → dual-3D modal | `App.tsx:482-523` + `ComparisonStage.tsx` | **Right `<View>` stays blank** — regression detected by inventory subagent — see KNOWN_ISSUES |
+| ✅ | "Open Comparison View" → dual-3D modal | `ComparisonStage.tsx` | HtmlView pattern (View outside Canvas + View.Port inside); canvas via `position: fixed` to work around drei v10 `View.js:19` isOffscreen bug — see KNOWN_ISSUES history |
 
 ## Decoration / supporting
 

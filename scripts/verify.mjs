@@ -97,9 +97,9 @@ async function verifyViewport(browser, name, viewport) {
     buttons.map((button) => button.getAttribute("title")),
   );
   const activeMode = await page.locator(".mode-switcher button.is-active").getAttribute("title");
-  const visualBox = await page.locator("canvas").boundingBox();
+  const visualBox = await page.locator(".canvas-wrap canvas").boundingBox();
   await page.screenshot({ path: outPath(`${name}.png`), fullPage: true });
-  await page.locator("canvas").screenshot({ path: outPath(`${name}-visual.png`) });
+  await page.locator(".canvas-wrap canvas").screenshot({ path: outPath(`${name}-visual.png`) });
   const metrics = await readVisualMetrics(page, "canvas");
 
   assert(title.includes("Frontal Lobe"), `${name}: initial title mismatch (got ${title})`);
@@ -160,7 +160,7 @@ async function verifyInteractions(browser) {
   const detailTitle = await page.locator(".detail-hero h3").innerText();
   assert(detailTitle.includes("Hippocampus"), "substructure switch did not update details");
   const hippoMetrics = await readVisualMetrics(page, "canvas");
-  await page.locator("canvas").screenshot({ path: outPath("hippocampus-occluded.png") });
+  await page.locator(".canvas-wrap canvas").screenshot({ path: outPath("hippocampus-occluded.png") });
 
   // Imaging mode toggle: click the second imaging button, expect is-active.
   const imagingButtons = await page.locator(".micro-card-row .micro-card").all();
@@ -196,7 +196,7 @@ async function verifyInteractions(browser) {
   assert(modalTitle.includes("Comparison View"), "comparison modal did not open");
 
   await page.screenshot({ path: outPath("interaction.png"), fullPage: true });
-  await page.locator("canvas").screenshot({ path: outPath("interaction-canvas.png") });
+  await page.locator(".canvas-wrap canvas").screenshot({ path: outPath("interaction-canvas.png") });
 
   // Confirm previously fake elements are gone.
   const topNavCount = await page.locator(".top-nav").count();

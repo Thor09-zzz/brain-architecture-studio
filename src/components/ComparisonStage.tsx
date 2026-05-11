@@ -1,6 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { View } from "@react-three/drei";
-import { useRef } from "react";
+import { PerspectiveCamera, View } from "@react-three/drei";
 import type { RegionItem } from "../data/regions";
 import { BrainSceneInner } from "./BrainSceneInner";
 
@@ -15,9 +14,17 @@ function buildProps(region: RegionItem) {
     resetKey: 0,
     imagingTone: region.accentSoft,
     imagingMode: "anatomical" as const,
+    compact: true as const,
   };
 }
 
+/**
+ * HtmlView pattern: <View> outside Canvas renders as a tracked <div>; its children
+ * tunnel through to <View.Port /> inside Canvas. This avoids the drei v10 CanvasView
+ * isOffscreen bug (View.js:19 mis-checks trackRect.left vs canvasSize.width when the
+ * canvas is offset from viewport left=0). HTML labels stay outside the View so they
+ * don't get tunneled into the WebGL scene.
+ */
 export function ComparisonStage({
   left,
   right,
@@ -25,31 +32,29 @@ export function ComparisonStage({
   left: RegionItem;
   right: RegionItem;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const leftRef = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
-
   return (
-    <div ref={containerRef} className="comparison-stage">
-      <div ref={leftRef} className="comparison-view">
+    <div className="comparison-stage">
+      <div className="comparison-cell">
         <span className="comparison-view-label">{left.name}</span>
+        <View index={1} className="comparison-view-3d">
+          <PerspectiveCamera makeDefault position={left.camera.position} fov={38} />
+          <BrainSceneInner {...buildProps(left)} />
+        </View>
       </div>
-      <div ref={rightRef} className="comparison-view">
+      <div className="comparison-cell">
         <span className="comparison-view-label">{right.name}</span>
+        <View index={2} className="comparison-view-3d">
+          <PerspectiveCamera makeDefault position={right.camera.position} fov={38} />
+          <BrainSceneInner {...buildProps(right)} />
+        </View>
       </div>
       <Canvas
-        eventSource={containerRef as React.RefObject<HTMLElement>}
+        className="comparison-stage-canvas"
         shadows
         gl={{ antialias: true, localClippingEnabled: true }}
         dpr={[1, 1.8]}
-        style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
       >
-        <View track={leftRef as React.RefObject<HTMLElement>}>
-          <BrainSceneInner {...buildProps(left)} />
-        </View>
-        <View track={rightRef as React.RefObject<HTMLElement>}>
-          <BrainSceneInner {...buildProps(right)} />
-        </View>
+        <View.Port />
       </Canvas>
     </div>
   );
