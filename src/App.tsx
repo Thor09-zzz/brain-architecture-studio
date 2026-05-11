@@ -21,22 +21,92 @@ import {
   type ClipOrientation,
   type ImagingMode,
 } from "./components/brain/materials";
-import { regions, getRegionById, type RegionItem, type ViewMode } from "./data/regions";
+import {
+  regions,
+  getRegionById,
+  type LocalizedText,
+  type RegionItem,
+  type ViewMode,
+} from "./data/regions";
+import { languageOptions, uiText, type Language } from "./i18n/uiText";
+
+type UiCopy = (typeof uiText)[Language];
 
 type ModeOption = {
   id: ViewMode;
-  label: string;
   Icon: LucideIcon;
 };
 
+const LANGUAGE_STORAGE_KEY = "brain-architecture-language";
+
 const modeOptions: ModeOption[] = [
-  { id: "mesh", label: "Whole", Icon: Box },
-  { id: "focus", label: "Region", Icon: CircleDot },
+  { id: "mesh", Icon: Box },
+  { id: "focus", Icon: CircleDot },
+];
+
+const clipOptions: ReadonlyArray<{ id: ClipOrientation; labelKey: "off" | "axial" | "coronal" | "sagittal" }> = [
+  { id: "off", labelKey: "off" },
+  { id: "axial", labelKey: "axial" },
+  { id: "coronal", labelKey: "coronal" },
+  { id: "sagittal", labelKey: "sagittal" },
 ];
 
 const initialRegion = getRegionById("frontal");
 
-function Header({ region }: { region: RegionItem }) {
+function localize(text: LocalizedText, language: Language) {
+  return text[language];
+}
+
+function getInitialLanguage(): Language {
+  if (typeof window === "undefined") {
+    return "zh";
+  }
+
+  return window.localStorage.getItem(LANGUAGE_STORAGE_KEY) === "en" ? "en" : "zh";
+}
+
+function getImagingLabel(pattern: string, fallback: LocalizedText, language: Language) {
+  const labels = uiText[language].imagingModes;
+  return pattern in labels ? labels[pattern as keyof typeof labels] : localize(fallback, language);
+}
+
+function LanguageToggle({
+  language,
+  onChange,
+  t,
+}: {
+  language: Language;
+  onChange: (language: Language) => void;
+  t: UiCopy;
+}) {
+  return (
+    <div className="language-switch" aria-label={t.languageLabel}>
+      {languageOptions.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          className={language === option.id ? "is-active" : ""}
+          onClick={() => onChange(option.id)}
+          aria-pressed={language === option.id}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Header({
+  regionName,
+  language,
+  onLanguageChange,
+  t,
+}: {
+  regionName: string;
+  language: Language;
+  onLanguageChange: (language: Language) => void;
+  t: UiCopy;
+}) {
   return (
     <header className="topbar">
       <div className="brand-block">
@@ -44,14 +114,17 @@ function Header({ region }: { region: RegionItem }) {
           <Brain size={26} />
         </div>
         <div>
-          <h1>Brain Architecture Studio</h1>
-          <p>Explore the cortex from systems to circuits</p>
+          <h1>{t.appTitle}</h1>
+          <p>{t.tagline}</p>
         </div>
       </div>
 
-      <div className="topbar-meta" aria-hidden="true">
-        <span className="accent-chip" style={{ background: region.accent }} />
-        <span className="topbar-label">{region.name}</span>
+      <div className="topbar-actions">
+        <div className="topbar-meta" aria-hidden="true">
+          <span className="accent-chip" />
+          <span className="topbar-label">{regionName}</span>
+        </div>
+        <LanguageToggle language={language} onChange={onLanguageChange} t={t} />
       </div>
     </header>
   );
@@ -61,6 +134,8 @@ type SidebarProps = {
   selectedRegion: RegionItem;
   activeSubstructure: string;
   favorites: Set<string>;
+  language: Language;
+  t: UiCopy;
   onSelectRegion: (id: string) => void;
   onSelectSubstructure: (id: string) => void;
   onToggleFavorite: (id: string) => void;
@@ -88,6 +163,8 @@ function Sidebar({
   selectedRegion,
   activeSubstructure,
   favorites,
+  language,
+  t,
   onSelectRegion,
   onSelectSubstructure,
   onToggleFavorite,
@@ -98,13 +175,14 @@ function Sidebar({
         <div className="panel-heading">
           <span>
             <Brain size={18} />
-            Brain Regions
+            {t.panels.regions}
           </span>
         </div>
 
         <div className="cell-list">
           {regions.map((region) => {
             const selected = selectedRegion.id === region.id;
+            const regionName = localize(region.name, language);
             return (
               <button
                 className={`cell-row ${selected ? "is-active" : ""}`}
@@ -114,8 +192,8 @@ function Sidebar({
               >
                 <MiniRegion region={region} />
                 <span className="cell-row-copy">
-                  <strong>{region.name}</strong>
-                  <span>{region.type}</span>
+                  <strong>{regionName}</strong>
+                  <span>{localize(region.type, language)}</span>
                 </span>
                 <span
                   className={`favorite-dot ${favorites.has(region.id) ? "is-on" : ""}`}
@@ -125,7 +203,7 @@ function Sidebar({
                   }}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Favorite ${region.name}`}
+                  aria-label={t.favorite.add(regionName)}
                 >
                   <Star size={18} fill="currentColor" />
                 </span>
@@ -139,7 +217,7 @@ function Sidebar({
         <div className="panel-heading">
           <span>
             <Sparkles size={16} />
-            Substructures
+            {t.panels.substructures}
           </span>
         </div>
 
@@ -152,7 +230,7 @@ function Sidebar({
               onClick={() => onSelectSubstructure(substructure.id)}
             >
               <span className="color-dot" style={{ background: substructure.color }} />
-              <span>{substructure.name}</span>
+              <span>{localize(substructure.name, language)}</span>
             </button>
           ))}
         </div>
@@ -163,6 +241,8 @@ function Sidebar({
 
 type StageProps = {
   region: RegionItem;
+  regionName: string;
+  regionType: string;
   activeSubstructure: string;
   viewMode: ViewMode;
   clipOrientation: ClipOrientation;
@@ -172,6 +252,7 @@ type StageProps = {
   imagingTone: string;
   imagingMode: ImagingMode;
   brainRef: React.RefObject<BrainSceneHandle | null>;
+  t: UiCopy;
   onModeChange: (mode: ViewMode) => void;
   onClipOrientationChange: (value: ClipOrientation) => void;
   onClipOffsetChange: (value: number) => void;
@@ -181,15 +262,10 @@ type StageProps = {
   onGlbExport: () => void;
 };
 
-const clipOptions: ReadonlyArray<{ id: ClipOrientation; label: string }> = [
-  { id: "off", label: "Off" },
-  { id: "axial", label: "Axial" },
-  { id: "coronal", label: "Coronal" },
-  { id: "sagittal", label: "Sagittal" },
-];
-
 function Stage({
   region,
+  regionName,
+  regionType,
   activeSubstructure,
   viewMode,
   clipOrientation,
@@ -199,6 +275,7 @@ function Stage({
   imagingTone,
   imagingMode,
   brainRef,
+  t,
   onModeChange,
   onClipOrientationChange,
   onClipOffsetChange,
@@ -212,36 +289,36 @@ function Stage({
       <section className="stage-panel">
         <div className="stage-title">
           <div>
-            <h2>{region.name}</h2>
-            <p>{region.type}</p>
+            <h2>{regionName}</h2>
+            <p>{regionType}</p>
           </div>
 
           <div className="view-card">
-            <span>View Mode</span>
+            <span>{t.viewMode}</span>
             <div className="mode-switcher">
-              {modeOptions.map(({ id, label, Icon }) => (
+              {modeOptions.map(({ id, Icon }) => (
                 <button
                   key={id}
                   type="button"
                   className={viewMode === id ? "is-active" : ""}
                   onClick={() => onModeChange(id)}
-                  title={label}
+                  title={t.modes[id]}
                 >
                   <Icon size={22} />
                 </button>
               ))}
             </div>
             <div className="clip-section">
-              <span className="clip-label">Cross Section</span>
+              <span className="clip-label">{t.clip.label}</span>
               <div className="clip-switcher">
-                {clipOptions.map(({ id, label }) => (
+                {clipOptions.map(({ id, labelKey }) => (
                   <button
                     key={id}
                     type="button"
                     className={clipOrientation === id ? "is-active" : ""}
                     onClick={() => onClipOrientationChange(id)}
                   >
-                    {label}
+                    {t.clip[labelKey]}
                   </button>
                 ))}
               </div>
@@ -254,7 +331,7 @@ function Stage({
                   value={clipOffset}
                   onChange={(event) => onClipOffsetChange(Number(event.target.value))}
                   className="clip-slider"
-                  aria-label="Cross section offset"
+                  aria-label={t.clip.offset}
                 />
               ) : null}
             </div>
@@ -281,34 +358,34 @@ function Stage({
             type="button"
             className={autoRotate ? "is-active" : ""}
             onClick={() => onAutoRotateChange(!autoRotate)}
-            title="Toggle auto rotation"
+            title={t.toolbar.rotateTitle}
           >
             <RotateCcw size={20} />
-            Rotate
+            {t.toolbar.rotate}
           </button>
           <button
             type="button"
             className={viewMode === "focus" ? "is-active" : ""}
             onClick={() => onModeChange(viewMode === "focus" ? "mesh" : "focus")}
-            title="Isolate the selected region"
+            title={t.toolbar.isolateTitle}
           >
             <CircleDot size={20} />
-            Isolate
+            {t.toolbar.isolate}
           </button>
-          <button type="button" onClick={onReset} title="Reset camera and rotation">
+          <button type="button" onClick={onReset} title={t.toolbar.resetTitle}>
             <RotateCcw size={20} />
-            Reset View
+            {t.toolbar.reset}
           </button>
         </div>
 
         <div className="export-toolbar">
-          <button type="button" onClick={onScreenshot} title="Download canvas as PNG">
+          <button type="button" onClick={onScreenshot} title={t.toolbar.screenshotTitle}>
             <Camera size={20} />
-            Screenshot
+            {t.toolbar.screenshot}
           </button>
-          <button type="button" onClick={onGlbExport} title="Export current scene as GLB">
+          <button type="button" onClick={onGlbExport} title={t.toolbar.exportGlbTitle}>
             <Box size={20} />
-            GLB Export
+            {t.toolbar.exportGlb}
           </button>
         </div>
       </section>
@@ -320,10 +397,19 @@ type RightPanelProps = {
   region: RegionItem;
   activeSubstructure: string;
   favorites: Set<string>;
+  language: Language;
+  t: UiCopy;
   onToggleFavorite: (id: string) => void;
 };
 
-function RightPanel({ region, activeSubstructure, favorites, onToggleFavorite }: RightPanelProps) {
+function RightPanel({
+  region,
+  activeSubstructure,
+  favorites,
+  language,
+  t,
+  onToggleFavorite,
+}: RightPanelProps) {
   const substructure =
     region.substructures.find((item) => item.id === activeSubstructure) ?? region.substructures[0];
 
@@ -331,8 +417,8 @@ function RightPanel({ region, activeSubstructure, favorites, onToggleFavorite }:
     <aside className="right-rail">
       <section className="panel details-panel">
         <div className="panel-heading detail-heading">
-          <span>Substructure Details</span>
-          <button type="button" onClick={() => onToggleFavorite(region.id)} aria-label="Toggle favorite">
+          <span>{t.panels.details}</span>
+          <button type="button" onClick={() => onToggleFavorite(region.id)} aria-label={t.favorite.toggle}>
             <Heart size={22} fill={favorites.has(region.id) ? "currentColor" : "none"} />
           </button>
         </div>
@@ -340,25 +426,25 @@ function RightPanel({ region, activeSubstructure, favorites, onToggleFavorite }:
         <div className="detail-hero">
           <span className="organelle-orb" style={{ background: substructure.color }} />
           <div>
-            <h3>{substructure.name}</h3>
-            <p>{substructure.subtitle}</p>
+            <h3>{localize(substructure.name, language)}</h3>
+            <p>{localize(substructure.subtitle, language)}</p>
           </div>
         </div>
 
         <dl className="attribute-list">
-          {substructure.attributes.map((item) => (
-            <div key={item.label}>
-              <dt>{item.label}</dt>
-              <dd>{item.value}</dd>
+          {substructure.attributes.map((item, index) => (
+            <div key={`${substructure.id}-${index}`}>
+              <dt>{localize(item.label, language)}</dt>
+              <dd>{localize(item.value, language)}</dd>
             </div>
           ))}
           <div>
-            <dt>Mesh status</dt>
+            <dt>{t.meshStatus.label}</dt>
             <dd>
               <span className="detail-dot" style={{ background: substructure.color }} />
               {substructure.meshes.length > 0
-                ? `${substructure.meshes.length} BodyParts3D mesh${substructure.meshes.length > 1 ? "es" : ""}`
-                : "Functional region — label only"}
+                ? t.meshStatus.count(substructure.meshes.length)
+                : t.meshStatus.labelOnly}
             </dd>
           </div>
         </dl>
@@ -366,26 +452,29 @@ function RightPanel({ region, activeSubstructure, favorites, onToggleFavorite }:
 
       <section className="panel notes-panel">
         <div className="panel-heading">
-          <span>Neuroscience Notes</span>
+          <span>{t.panels.notes}</span>
         </div>
-        <p>{substructure.note}</p>
+        <p>{localize(substructure.note, language)}</p>
         <div className="fun-fact">
-          <span>Fun Fact: {substructure.fact}</span>
+          <span>
+            {t.factPrefix}
+            {localize(substructure.fact, language)}
+          </span>
           <Sparkles size={18} />
         </div>
       </section>
 
       <section className="panel occurrence-panel">
         <div className="panel-heading">
-          <span>Anatomical Location</span>
+          <span>{t.panels.location}</span>
         </div>
         <div className={`occurrence-art occurrence-${region.occurrence.motif}`}>
           <span />
           <i />
           <b />
         </div>
-        <h4>{region.occurrence.title}</h4>
-        <p>{region.occurrence.body}</p>
+        <h4>{localize(region.occurrence.title, language)}</h4>
+        <p>{localize(region.occurrence.body, language)}</p>
       </section>
     </aside>
   );
@@ -393,13 +482,24 @@ function RightPanel({ region, activeSubstructure, favorites, onToggleFavorite }:
 
 type BottomPanelsProps = {
   region: RegionItem;
-  activeImaging: string;
+  activeImagingPattern: string;
+  language: Language;
+  t: UiCopy;
   onCompare: () => void;
-  onSelectImaging: (label: string) => void;
+  onSelectImaging: (pattern: string) => void;
 };
 
-function BottomPanels({ region, activeImaging, onCompare, onSelectImaging }: BottomPanelsProps) {
+function BottomPanels({
+  region,
+  activeImagingPattern,
+  language,
+  t,
+  onCompare,
+  onSelectImaging,
+}: BottomPanelsProps) {
   const comparedRegion = getRegionById(region.comparison);
+  const regionName = localize(region.name, language);
+  const comparedRegionName = localize(comparedRegion.name, language);
 
   return (
     <section className="bottom-grid">
@@ -407,30 +507,33 @@ function BottomPanels({ region, activeImaging, onCompare, onSelectImaging }: Bot
         <div className="panel-heading">
           <span>
             <Microscope size={16} />
-            Imaging Modes
+            {t.panels.imaging}
           </span>
         </div>
         <div className="micro-card-row">
-          {region.microscope.map((image) => (
-            <button
-              type="button"
-              key={image.label}
-              className={`micro-card pattern-${image.pattern} ${activeImaging === image.label ? "is-active" : ""}`}
-              style={{ "--micro": image.tone } as CSSProperties}
-              onClick={() => onSelectImaging(image.label)}
-              aria-pressed={activeImaging === image.label}
-            >
-              <span />
-              <strong>{image.label}</strong>
-            </button>
-          ))}
+          {region.microscope.map((image) => {
+            const label = getImagingLabel(image.pattern, image.label, language);
+            return (
+              <button
+                type="button"
+                key={image.pattern}
+                className={`micro-card pattern-${image.pattern} ${activeImagingPattern === image.pattern ? "is-active" : ""}`}
+                style={{ "--micro": image.tone } as CSSProperties}
+                onClick={() => onSelectImaging(image.pattern)}
+                aria-pressed={activeImagingPattern === image.pattern}
+              >
+                <span />
+                <strong>{label}</strong>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="panel compare-panel">
         <div className="panel-heading">
           <span>
-            Compare Regions
+            {t.panels.compare}
             <Info size={16} />
           </span>
         </div>
@@ -438,21 +541,21 @@ function BottomPanels({ region, activeImaging, onCompare, onSelectImaging }: Bot
           <div>
             <MiniRegion region={region} />
             <span>
-              <strong>{region.name}</strong>
-              <em>You are here</em>
+              <strong>{regionName}</strong>
+              <em>{t.comparison.current}</em>
             </span>
           </div>
-          <b>VS</b>
+          <b>{t.comparison.versus}</b>
           <div>
             <span>
-              <strong>{comparedRegion.name}</strong>
-              <em>{comparedRegion.type}</em>
+              <strong>{comparedRegionName}</strong>
+              <em>{localize(comparedRegion.type, language)}</em>
             </span>
             <MiniRegion region={comparedRegion} />
           </div>
         </div>
         <button type="button" className="comparison-button" onClick={onCompare}>
-          Open Comparison View
+          {t.comparison.open}
           <ArrowRight size={20} />
         </button>
       </div>
@@ -462,11 +565,13 @@ function BottomPanels({ region, activeImaging, onCompare, onSelectImaging }: Bot
 
 type ComparisonModalProps = {
   region: RegionItem;
+  language: Language;
   open: boolean;
+  t: UiCopy;
   onClose: () => void;
 };
 
-function ComparisonModal({ region, open, onClose }: ComparisonModalProps) {
+function ComparisonModal({ region, language, open, t, onClose }: ComparisonModalProps) {
   const comparedRegion = getRegionById(region.comparison);
   if (!open) {
     return null;
@@ -478,40 +583,40 @@ function ComparisonModal({ region, open, onClose }: ComparisonModalProps) {
   const comparedSub =
     comparedRegion.substructures.find((item) => item.id === comparedRegion.defaultSubstructure) ??
     comparedRegion.substructures[0];
+  const regionName = localize(region.name, language);
+  const comparedRegionName = localize(comparedRegion.name, language);
 
   return (
-    <div className="modal-layer" role="dialog" aria-modal="true" aria-label="Region comparison">
+    <div className="modal-layer" role="dialog" aria-modal="true" aria-label={t.comparison.dialogLabel}>
       <div className="comparison-modal">
         <button className="modal-close" type="button" onClick={onClose}>
-          Close
+          {t.comparison.close}
         </button>
         <div className="comparison-modal-head">
-          <h3>Comparison View</h3>
-          <p>
-            {region.name} compared with {comparedRegion.name}
-          </p>
+          <h3>{t.comparison.title}</h3>
+          <p>{t.comparison.description(regionName, comparedRegionName)}</p>
         </div>
-        <ComparisonStage left={region} right={comparedRegion} />
+        <ComparisonStage left={region} right={comparedRegion} leftLabel={regionName} rightLabel={comparedRegionName} />
         <div className="comparison-columns">
           {[region, comparedRegion].map((item) => {
             const sub = item.id === region.id ? currentSub : comparedSub;
             return (
               <section key={item.id}>
                 <MiniRegion region={item} />
-                <h4>{item.name}</h4>
-                <p>{item.type}</p>
+                <h4>{localize(item.name, language)}</h4>
+                <p>{localize(item.type, language)}</p>
                 <dl>
                   <div>
-                    <dt>Default focus</dt>
-                    <dd>{sub.name}</dd>
+                    <dt>{t.comparison.defaultFocus}</dt>
+                    <dd>{localize(sub.name, language)}</dd>
                   </div>
                   <div>
-                    <dt>Main note</dt>
-                    <dd>{sub.subtitle}</dd>
+                    <dt>{t.comparison.mainNote}</dt>
+                    <dd>{localize(sub.subtitle, language)}</dd>
                   </div>
                   <div>
-                    <dt>Located at</dt>
-                    <dd>{item.occurrence.title}</dd>
+                    <dt>{t.comparison.locatedAt}</dt>
+                    <dd>{localize(item.occurrence.title, language)}</dd>
                   </div>
                 </dl>
               </section>
@@ -553,6 +658,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 export default function App() {
+  const [language, setLanguage] = useState<Language>(getInitialLanguage);
   const [selectedRegionId, setSelectedRegionId] = useState(initialRegion.id);
   const [activeSubstructure, setActiveSubstructure] = useState(initialRegion.defaultSubstructure);
   const [viewMode, setViewMode] = useState<ViewMode>("mesh");
@@ -563,20 +669,29 @@ export default function App() {
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set([initialRegion.id]));
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [activeImaging, setActiveImaging] = useState<string>(
-    initialRegion.microscope[0]?.label ?? "T1 MRI",
+  const [activeImagingPattern, setActiveImagingPattern] = useState<string>(
+    initialRegion.microscope[0]?.pattern ?? "mri-t1",
   );
   const toastTimer = useRef<number | null>(null);
   const brainRef = useRef<BrainSceneHandle | null>(null);
+  const t = uiText[language];
 
   const selectedRegion = useMemo(() => getRegionById(selectedRegionId), [selectedRegionId]);
+  const selectedRegionName = localize(selectedRegion.name, language);
+  const selectedRegionType = localize(selectedRegion.type, language);
+
+  useEffect(() => {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+    document.title = t.documentTitle;
+  }, [language, t.documentTitle]);
 
   useEffect(() => {
     setActiveSubstructure(selectedRegion.defaultSubstructure);
     setComparisonOpen(false);
-    setActiveImaging((current) => {
-      const labels = selectedRegion.microscope.map((image) => image.label);
-      return labels.includes(current) ? current : labels[0] ?? current;
+    setActiveImagingPattern((current) => {
+      const patterns = selectedRegion.microscope.map((image) => image.pattern);
+      return patterns.includes(current) ? current : patterns[0] ?? current;
     });
   }, [selectedRegion]);
 
@@ -603,38 +718,38 @@ export default function App() {
   function handleScreenshot() {
     const dataUrl = brainRef.current?.screenshot();
     if (!dataUrl) {
-      showToast("Screenshot unavailable.");
+      showToast(t.toast.screenshotUnavailable);
       return;
     }
     downloadBlob(dataUrlToBlob(dataUrl), `brain-${selectedRegion.id}-${Date.now()}.png`);
-    showToast("Screenshot saved.");
+    showToast(t.toast.screenshotSaved);
   }
 
   async function handleGlbExport() {
-    showToast("Building GLB…");
+    showToast(t.toast.buildingGlb);
     const buffer = await brainRef.current?.exportGLB();
     if (!buffer) {
-      showToast("GLB export failed.");
+      showToast(t.toast.glbFailed);
       return;
     }
     downloadBlob(
       new Blob([buffer], { type: "model/gltf-binary" }),
       `brain-${selectedRegion.id}-${Date.now()}.glb`,
     );
-    showToast(`GLB exported (${(buffer.byteLength / 1024).toFixed(0)} KB).`);
+    showToast(t.toast.glbExported((buffer.byteLength / 1024).toFixed(0)));
   }
 
   function handleReset() {
     brainRef.current?.resetView();
     setResetKey((key) => key + 1);
-    showToast("View reset.");
+    showToast(t.toast.viewReset);
   }
 
   const activeImagingEntry = useMemo(
     () =>
-      selectedRegion.microscope.find((image) => image.label === activeImaging) ??
+      selectedRegion.microscope.find((image) => image.pattern === activeImagingPattern) ??
       selectedRegion.microscope[0],
-    [selectedRegion, activeImaging],
+    [selectedRegion, activeImagingPattern],
   );
   const imagingTone = activeImagingEntry?.tone ?? selectedRegion.accentSoft;
   const imagingMode = useMemo<ImagingMode>(
@@ -650,13 +765,20 @@ export default function App() {
 
   return (
     <div className="app-shell" style={shellStyle}>
-      <Header region={selectedRegion} />
+      <Header
+        regionName={selectedRegionName}
+        language={language}
+        onLanguageChange={setLanguage}
+        t={t}
+      />
 
       <div className="app-grid">
         <Sidebar
           selectedRegion={selectedRegion}
           activeSubstructure={activeSubstructure}
           favorites={favorites}
+          language={language}
+          t={t}
           onSelectRegion={setSelectedRegionId}
           onSelectSubstructure={setActiveSubstructure}
           onToggleFavorite={toggleFavorite}
@@ -665,6 +787,8 @@ export default function App() {
         <div className="center-stack">
           <Stage
             region={selectedRegion}
+            regionName={selectedRegionName}
+            regionType={selectedRegionType}
             activeSubstructure={activeSubstructure}
             viewMode={viewMode}
             clipOrientation={clipOrientation}
@@ -674,6 +798,7 @@ export default function App() {
             imagingTone={imagingTone}
             imagingMode={imagingMode}
             brainRef={brainRef}
+            t={t}
             onModeChange={setViewMode}
             onClipOrientationChange={(orientation) => {
               setClipOrientation(orientation);
@@ -689,11 +814,15 @@ export default function App() {
           />
           <BottomPanels
             region={selectedRegion}
-            activeImaging={activeImaging}
+            activeImagingPattern={activeImagingPattern}
+            language={language}
+            t={t}
             onCompare={() => setComparisonOpen(true)}
-            onSelectImaging={(label) => {
-              setActiveImaging(label);
-              showToast(`${label} imaging tone applied.`);
+            onSelectImaging={(pattern) => {
+              const entry = selectedRegion.microscope.find((image) => image.pattern === pattern);
+              const label = entry ? getImagingLabel(entry.pattern, entry.label, language) : pattern;
+              setActiveImagingPattern(pattern);
+              showToast(t.toast.imagingApplied(label));
             }}
           />
         </div>
@@ -702,11 +831,19 @@ export default function App() {
           region={selectedRegion}
           activeSubstructure={activeSubstructure}
           favorites={favorites}
+          language={language}
+          t={t}
           onToggleFavorite={toggleFavorite}
         />
       </div>
 
-      <ComparisonModal region={selectedRegion} open={comparisonOpen} onClose={() => setComparisonOpen(false)} />
+      <ComparisonModal
+        region={selectedRegion}
+        language={language}
+        open={comparisonOpen}
+        t={t}
+        onClose={() => setComparisonOpen(false)}
+      />
       <Toast message={toast} />
       <Loader
         containerStyles={{
@@ -721,7 +858,7 @@ export default function App() {
           fontSize: "14px",
           letterSpacing: "0.04em",
         }}
-        dataInterpolation={(p) => `Loading anatomy ${p.toFixed(0)} %`}
+        dataInterpolation={(p) => t.loading(p)}
       />
     </div>
   );

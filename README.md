@@ -13,6 +13,17 @@
 
 ![demo](https://github.com/toby-bridges/brain-architecture-studio/releases/download/v0.1.0/killer-demo-small.gif)
 
+## 中文说明
+
+本项目基于 **Brain Architecture Studio** 进行中文本地化与体验改造。
+
+- 原作者：toby-bridges
+- 原项目地址：https://github.com/toby-bridges/brain-architecture-studio
+- 代码许可证：MIT License
+- 3D 解剖模型数据来源：BodyParts3D / DBCLS
+- 数据授权：CC-BY-SA 2.1 Japan
+- 本版本仅用于学习、测试、中文化展示和开源项目体验改造。
+
 A browser-based 3D brain explorer for developers, neuroscience students, and educators who want **real anatomy + interactive material metaphors + an open, forkable codebase**. Not a textbook tour (that's [brainfacts.org](https://brainfacts.org/3d-brain)) — a lab notebook.
 
 > 36-second tour above: region selection → deep-structure occluding shell → 4 imaging modes (T1 / fMRI / DTI / Histology) → cross-section → dual-view comparison. [Full MP4 (1.7MB)](https://github.com/toby-bridges/brain-architecture-studio/releases/download/v0.1.0/killer-demo.mp4)
