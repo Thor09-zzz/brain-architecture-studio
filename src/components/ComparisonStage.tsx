@@ -28,21 +28,25 @@ function buildProps(region: RegionItem) {
 export function ComparisonStage({
   left,
   right,
+  leftLabel,
+  rightLabel,
 }: {
   left: RegionItem;
   right: RegionItem;
+  leftLabel?: string;
+  rightLabel?: string;
 }) {
   return (
     <div className="comparison-stage">
       <div className="comparison-cell">
-        <span className="comparison-view-label">{left.name}</span>
+        <span className="comparison-view-label">{leftLabel ?? left.name.en}</span>
         <View index={1} className="comparison-view-3d">
           <PerspectiveCamera makeDefault position={left.camera.position} fov={38} />
           <BrainSceneInner {...buildProps(left)} />
         </View>
       </div>
       <div className="comparison-cell">
-        <span className="comparison-view-label">{right.name}</span>
+        <span className="comparison-view-label">{rightLabel ?? right.name.en}</span>
         <View index={2} className="comparison-view-3d">
           <PerspectiveCamera makeDefault position={right.camera.position} fov={38} />
           <BrainSceneInner {...buildProps(right)} />
