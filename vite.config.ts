@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 const base = process.env.VITE_BASE_PATH ?? "/";
 
 export default defineConfig({
-  base: './'
+  base: './', // <--- 关键点：这里补上了逗号
   plugins: [react()],
   server: {
     host: "127.0.0.1",
