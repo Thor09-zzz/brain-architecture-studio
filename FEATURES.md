@@ -75,7 +75,7 @@ Evidence basis: `.tmp/inventory.md` (86 features × Playwright screenshots in `v
 | ✅ | `build-region-glbs.mjs` | BodyParts3D OBJ → GLB pipeline |
 | ✅ | `add-region-cameras.mjs` / `add-substructure-cameras.mjs` / `add-substructure-meshes.mjs` | Schema authoring helpers |
 | ✅ | `killer-demo.mjs` | Marketing recording (Playwright video → ffmpeg mp4/gif) |
-| 🗑️ | 10 scratch scripts | See KNOWN_ISSUES "Scripts hygiene" — pending move to `scripts/scratch/` |
+| ✅ | `scripts/scratch/` (13 files) | Isolated one-off probes; new scratch goes here. Examples: `repro-occipital-crash.mjs`, `debug-comparison.mjs`, region/clip/imaging-mode probes |
 
 ---
 

@@ -45,17 +45,10 @@ These are functional or cytoarchitectonic regions BodyParts3D doesn't ship as di
 
 **Path forward**: collapse sidebar to tab on mobile.
 
-## 🟡 Scripts hygiene
-
-**Status**: `scripts/` has 16 files; per inventory subagent classification, **10 are scratch** and should move to `scripts/scratch/` (gitignored):
-
-`all-region-shots, check-brainstem, clip-shot, cross-section-shot, debug-warning, imaging-modes-shot, recon, sub-cam-shots, three-features-shot`
-
-**Disagreement with subagent**: `killer-demo.mjs` was classified as scratch but is actually the marketing demo recorder — keep at top level.
-
-**Pending action**: `git mv` + `.gitignore` update.
 
 ## Recently fixed (history)
+
+- **Scripts hygiene** (2026-05-11): Moved 13 one-off probes to `scripts/scratch/` via `git mv`. Top-level `scripts/` now has 7 keep files only: `verify.mjs`, `inventory.mjs`, `build-region-glbs.mjs`, 3× `add-*` authoring helpers, `killer-demo.mjs`.
 
 - **Comparison Modal right brain blank** (2026-05-11): Switched to drei HtmlView pattern (`<View>` outside Canvas + `<View.Port />` inside) with `<PerspectiveCamera makeDefault>` per view. Workaround for drei v10 `View.js:19` `isOffscreen` check which mis-compares `trackRect.left` to `canvasSize.width` instead of `canvasSize.left + .width`; resolved by giving canvas `position: fixed; inset: 0` so canvasSize spans full viewport. Both halves now render. Evidence: `verification/feat-comparison-fixed.png` (left Frontal gold + right Parietal green).
 - **Screenshot camera-type console error** (2026-05-11): Captured `cameraRef` via `<CaptureContext>` (alongside existing glRef/sceneRef), replaced `(gl as any).camera ?? scene` hack with `cameraRef.current`. Verified 0 camera/THREE errors via `scripts/verify-screenshot-fix.mjs`.
