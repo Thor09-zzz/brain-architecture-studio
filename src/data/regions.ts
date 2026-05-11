@@ -77,7 +77,9 @@ export const DEFAULT_CAMERA: CameraPose = {
   target: [0, 0.05, 0],
 };
 
-export const FJ_MESH_BASE_URL = "/models/regions";
+// Vite injects BASE_URL based on vite.config.ts `base`. In dev = "/", in prod
+// (GitHub Pages) = "/brain-architecture-studio/". Both end with a slash.
+export const FJ_MESH_BASE_URL = `${import.meta.env.BASE_URL}models/regions`;
 export const fjMeshUrl = (code: string) => `${FJ_MESH_BASE_URL}/${code}.glb`;
 
 export const regions: RegionItem[] = [

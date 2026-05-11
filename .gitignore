@@ -1,7 +1,6 @@
 node_modules/
 dist/
 verification/
-docs/PRD.md
 .tmp/
 
 # Scratch scripts live here but stay untracked going forward.

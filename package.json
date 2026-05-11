@@ -2,6 +2,11 @@
   "name": "brain-architecture-studio",
   "version": "0.1.0",
   "license": "MIT",
+  "homepage": "https://toby-bridges.github.io/brain-architecture-studio/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toby-bridges/brain-architecture-studio.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
