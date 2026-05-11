@@ -19,6 +19,7 @@
 
 - 原作者：toby-bridges
 - 原项目地址：https://github.com/toby-bridges/brain-architecture-studio
+- 中英切换demo：Live Demo: https://brain-architecture-studio.vercel.app/
 - 代码许可证：MIT License
 - 3D 解剖模型数据来源：BodyParts3D / DBCLS
 - 数据授权：CC-BY-SA 2.1 Japan
