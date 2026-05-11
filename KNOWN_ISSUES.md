@@ -5,15 +5,17 @@ Issues discovered, not yet fixed. Updated 2026-05-11.
 
 Evidence basis: subagent inventory run on dev `http://127.0.0.1:5173/` (3 passes, 86 features each).
 
-## 🟡 Occipital + Myelin Stain crash (intermittent)
+## 🟢 Occipital + Myelin Stain crash — observed once, cannot re-reproduce
 
-**Symptom**: 1 of 3 inventory runs hit `pageerror: Cannot read properties of null (reading 'alpha')` after clicking Occipital → Myelin Stain. White-screened the React tree, all subsequent clicks failed.
+**Symptom (initial)**: 1 of 3 inventory runs hit `pageerror: Cannot read properties of null (reading 'alpha')` after clicking Occipital → Myelin Stain. White-screened the React tree.
 
-**Frequency**: Intermittent, ~33% reproduction in inventory runs. Other Histology-family imaging (Nissl, Purkinje, Golgi, Brainstem Myelin) clicked clean.
+**Investigation 2026-05-11**: 8 dedicated repro attempts (`scripts/repro-occipital-crash.mjs`, isolating exactly the failing sequence with pageerror capture) + 1 full inventory rerun = **0 reproductions in 9 runs**. Original 1/3 rate appears to have been even rarer or sensitive to broader interaction history.
 
-**Suspect**: A `null` material/texture somewhere in the bloom/clipping pass when this specific (region, mode) combination fires during a particular animation frame. Race condition on first paint of that mode.
+**Severity**: 🟢 — downgraded from 🟡. Without stable repro, can't pinpoint cause or write a fix that won't drift. Leaving the repro script in `scripts/` so anyone hitting it can capture the stack trace.
 
-**Severity**: 🟡 — race not consistent, but a crash is a crash. Worth reproducing with `node scripts/inventory.mjs` until caught with stack trace.
+**Suspect (unchanged)**: A `null` material/texture in the bloom pass on first paint of histology preset (low `intensityScale = 0.35`) combined with Occipital's specific 2-mesh region. Possible race with Bloom's luminance threshold pass.
+
+**Next time it's seen**: capture `Error.stack` via `page.on("pageerror")` and update this entry with the trace.
 
 ## 🟢 Imaging modes are visual stylization, not real imaging data
 
