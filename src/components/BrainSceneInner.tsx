@@ -23,8 +23,8 @@ export type BrainSceneInnerProps = {
   /**
    * Compact mode for embedding inside drei <View> portals (e.g. ComparisonStage).
    * Skips: OrbitControls (no makeDefault to avoid stomping siblings), EffectComposer
-   * (one renderer can't host two composers). CameraRig still runs and falls back
-   * to camera.lookAt when controls are absent.
+   * (one renderer can't host two composers). CameraRig only runs in compact
+   * comparison views so the main stage keeps one consistent camera angle.
    */
   compact?: boolean;
   /** Optional refs the orchestrator can pass to capture renderer/scene/group/controls. */
@@ -36,9 +36,9 @@ export type BrainSceneInnerProps = {
 };
 
 export function tintBackground(tone: string) {
-  const paper = new Color("#fbf6ec");
+  const paper = new Color("#ded6c9");
   const accent = new Color(tone);
-  return paper.lerp(accent, 0.18).getStyle();
+  return paper.lerp(accent, 0.12).getStyle();
 }
 
 const noopGlRef = { current: null } as React.MutableRefObject<WebGLRenderer | null>;
@@ -74,21 +74,21 @@ export function BrainSceneInner({
   return (
     <>
       <color attach="background" args={[tintBackground(imagingTone)]} />
-      <ambientLight intensity={0.78} />
+      <ambientLight intensity={0.66} />
       <directionalLight
         position={[3.2, 4.4, 3.8]}
-        intensity={1.1}
+        intensity={0.96}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
-      <directionalLight position={[-3.2, 2.4, -2.8]} intensity={0.42} />
+      <directionalLight position={[-3.2, 2.4, -2.8]} intensity={0.34} />
       <CaptureContext
         glRef={glRef ?? noopGlRef}
         sceneRef={sceneRef ?? noopSceneRef}
         cameraRef={cameraRef}
       />
-      <CameraRig region={region} activeSubstructure={activeSubstructure} />
+      {compact ? <CameraRig region={region} activeSubstructure={activeSubstructure} /> : null}
       <Suspense fallback={null}>
         <AutoSpinRig
           enabled={autoRotate && !clipEnabled}
@@ -107,8 +107,8 @@ export function BrainSceneInner({
       {compact ? null : (
         <EffectComposer autoClear={false} multisampling={4}>
           <Bloom
-            intensity={0.55}
-            luminanceThreshold={0.78}
+            intensity={0.28}
+            luminanceThreshold={0.86}
             luminanceSmoothing={0.22}
             kernelSize={KernelSize.MEDIUM}
             mipmapBlur
@@ -130,9 +130,9 @@ export function BrainSceneInner({
           enablePan={false}
           enableDamping
           dampingFactor={0.08}
-          minDistance={2.0}
-          maxDistance={6.6}
-          target={[0, 0.05, 0]}
+          minDistance={3.4}
+          maxDistance={12.5}
+          target={[0, 0.05, 0.1]}
         />
       )}
     </>

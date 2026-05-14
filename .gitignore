@@ -2,6 +2,8 @@ node_modules/
 dist/
 verification/
 .tmp/
+raw/
+video/
 
 # Scratch scripts live here but stay untracked going forward.
 # (existing committed files in scratch/ remain tracked; new probes get ignored.)

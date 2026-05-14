@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { forwardRef, useImperativeHandle, useRef } from "react";
-import { Camera, Group, Scene, WebGLRenderer } from "three";
+import { Camera, Group, Scene, Vector3, WebGLRenderer } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { RegionItem, ViewMode } from "../data/regions";
 import { BrainSceneInner } from "./BrainSceneInner";
@@ -18,6 +18,9 @@ type BrainSceneProps = {
   imagingTone: string;
   imagingMode: ImagingMode;
 };
+
+const DEFAULT_CAMERA_POSITION = new Vector3(4.9, 2.8, 6.5);
+const DEFAULT_CAMERA_TARGET = new Vector3(0, 0.05, 0.1);
 
 export type BrainSceneHandle = {
   resetView: () => void;
@@ -40,6 +43,14 @@ export const BrainScene = forwardRef<BrainSceneHandle, BrainSceneProps>(function
     () => ({
       resetView: () => {
         controlsRef.current?.reset();
+        if (cameraRef.current) {
+          cameraRef.current.position.copy(DEFAULT_CAMERA_POSITION);
+          cameraRef.current.lookAt(DEFAULT_CAMERA_TARGET);
+        }
+        if (controlsRef.current) {
+          controlsRef.current.target.copy(DEFAULT_CAMERA_TARGET);
+          controlsRef.current.update();
+        }
         if (groupRef.current) {
           groupRef.current.rotation.set(0, 0, 0);
         }
@@ -85,7 +96,7 @@ export const BrainScene = forwardRef<BrainSceneHandle, BrainSceneProps>(function
   return (
     <Canvas
       shadows
-      camera={{ position: [2.4, 1.5, 3.0], fov: 38 }}
+      camera={{ position: DEFAULT_CAMERA_POSITION.toArray(), fov: 38 }}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
       dpr={[1, 1.8]}
     >

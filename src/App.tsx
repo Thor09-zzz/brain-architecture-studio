@@ -8,8 +8,10 @@ import {
   Info,
   Microscope,
   RotateCcw,
+  SlidersHorizontal,
   Sparkles,
   Star,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
@@ -50,6 +52,8 @@ const clipOptions: ReadonlyArray<{ id: ClipOrientation; labelKey: "off" | "axial
   { id: "coronal", labelKey: "coronal" },
   { id: "sagittal", labelKey: "sagittal" },
 ];
+
+type StagePanelId = "view" | "imaging" | null;
 
 const initialRegion = getRegionById("frontal");
 
@@ -241,9 +245,9 @@ function Sidebar({
 
 type StageProps = {
   region: RegionItem;
-  regionName: string;
-  regionType: string;
   activeSubstructure: string;
+  activeImagingPattern: string;
+  language: Language;
   viewMode: ViewMode;
   clipOrientation: ClipOrientation;
   clipOffset: number;
@@ -257,6 +261,8 @@ type StageProps = {
   onClipOrientationChange: (value: ClipOrientation) => void;
   onClipOffsetChange: (value: number) => void;
   onAutoRotateChange: (value: boolean) => void;
+  onSelectImaging: (pattern: string) => void;
+  onCompare: () => void;
   onReset: () => void;
   onScreenshot: () => void;
   onGlbExport: () => void;
@@ -264,9 +270,9 @@ type StageProps = {
 
 function Stage({
   region,
-  regionName,
-  regionType,
   activeSubstructure,
+  activeImagingPattern,
+  language,
   viewMode,
   clipOrientation,
   clipOffset,
@@ -280,63 +286,154 @@ function Stage({
   onClipOrientationChange,
   onClipOffsetChange,
   onAutoRotateChange,
+  onSelectImaging,
+  onCompare,
   onReset,
   onScreenshot,
   onGlbExport,
 }: StageProps) {
+  const [activePanel, setActivePanel] = useState<StagePanelId>(null);
+  const activeImagingEntry =
+    region.microscope.find((image) => image.pattern === activeImagingPattern) ?? region.microscope[0];
+  const activeImagingLabel = activeImagingEntry
+    ? getImagingLabel(activeImagingEntry.pattern, activeImagingEntry.label, language)
+    : t.panels.imaging;
+
+  function togglePanel(panel: Exclude<StagePanelId, null>) {
+    setActivePanel((current) => (current === panel ? null : panel));
+  }
+
   return (
     <main className="stage-column">
       <section className="stage-panel">
-        <div className="stage-title">
-          <div>
-            <h2>{regionName}</h2>
-            <p>{regionType}</p>
+        <div className="stage-actions">
+          <div className="stage-action-group">
+            <button
+              type="button"
+              className={activePanel === "imaging" ? "is-active" : ""}
+              onClick={() => togglePanel("imaging")}
+              aria-expanded={activePanel === "imaging"}
+            >
+              <Microscope size={20} />
+              {activeImagingLabel}
+            </button>
+            <button
+              type="button"
+              className={activePanel === "view" ? "is-active" : ""}
+              onClick={() => togglePanel("view")}
+              aria-expanded={activePanel === "view"}
+            >
+              <SlidersHorizontal size={20} />
+              {t.viewMode}
+            </button>
+            <button type="button" onClick={onCompare}>
+              <Info size={20} />
+              {t.panels.compare}
+            </button>
           </div>
 
-          <div className="view-card">
-            <span>{t.viewMode}</span>
-            <div className="mode-switcher">
-              {modeOptions.map(({ id, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={viewMode === id ? "is-active" : ""}
-                  onClick={() => onModeChange(id)}
-                  title={t.modes[id]}
-                >
-                  <Icon size={22} />
-                </button>
-              ))}
-            </div>
-            <div className="clip-section">
-              <span className="clip-label">{t.clip.label}</span>
-              <div className="clip-switcher">
-                {clipOptions.map(({ id, labelKey }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={clipOrientation === id ? "is-active" : ""}
-                    onClick={() => onClipOrientationChange(id)}
-                  >
-                    {t.clip[labelKey]}
-                  </button>
-                ))}
-              </div>
-              {clipOrientation !== "off" ? (
-                <input
-                  type="range"
-                  min={-1.2}
-                  max={1.2}
-                  step={0.01}
-                  value={clipOffset}
-                  onChange={(event) => onClipOffsetChange(Number(event.target.value))}
-                  className="clip-slider"
-                  aria-label={t.clip.offset}
-                />
-              ) : null}
-            </div>
+          <div className="stage-action-group">
+            <button
+              type="button"
+              className={autoRotate ? "is-active" : ""}
+              onClick={() => onAutoRotateChange(!autoRotate)}
+              title={t.toolbar.rotateTitle}
+            >
+              <RotateCcw size={20} />
+              {t.toolbar.rotate}
+            </button>
+            <button type="button" onClick={onReset} title={t.toolbar.resetTitle}>
+              <RotateCcw size={20} />
+              {t.toolbar.reset}
+            </button>
+            <button type="button" onClick={onScreenshot} title={t.toolbar.screenshotTitle}>
+              <Camera size={20} />
+              {t.toolbar.screenshot}
+            </button>
+            <button type="button" onClick={onGlbExport} title={t.toolbar.exportGlbTitle}>
+              <Box size={20} />
+              {t.toolbar.exportGlb}
+            </button>
           </div>
         </div>
+
+        {activePanel ? (
+          <div className="stage-popover">
+            <div className="stage-popover-head">
+              <strong>{activePanel === "imaging" ? t.panels.imaging : t.viewMode}</strong>
+              <button type="button" onClick={() => setActivePanel(null)} aria-label={t.comparison.close}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {activePanel === "imaging" ? (
+              <div className="stage-imaging-options">
+                {region.microscope.map((image) => {
+                  const label = getImagingLabel(image.pattern, image.label, language);
+                  return (
+                    <button
+                      type="button"
+                      key={image.pattern}
+                      className={activeImagingPattern === image.pattern ? "is-active" : ""}
+                      style={{ "--micro": image.tone } as CSSProperties}
+                      onClick={() => {
+                        onSelectImaging(image.pattern);
+                        setActivePanel(null);
+                      }}
+                    >
+                      <span />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="stage-view-options">
+                <div className="mode-switcher">
+                  {modeOptions.map(({ id, Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={viewMode === id ? "is-active" : ""}
+                      onClick={() => onModeChange(id)}
+                      title={t.modes[id]}
+                    >
+                      <Icon size={22} />
+                      {t.modes[id]}
+                    </button>
+                  ))}
+                </div>
+                <div className="clip-section">
+                  <span className="clip-label">{t.clip.label}</span>
+                  <div className="clip-switcher">
+                    {clipOptions.map(({ id, labelKey }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={clipOrientation === id ? "is-active" : ""}
+                        onClick={() => onClipOrientationChange(id)}
+                      >
+                        {t.clip[labelKey]}
+                      </button>
+                    ))}
+                  </div>
+                  {clipOrientation !== "off" ? (
+                    <input
+                      type="range"
+                      min={-1.2}
+                      max={1.2}
+                      step={0.01}
+                      value={clipOffset}
+                      onChange={(event) => onClipOffsetChange(Number(event.target.value))}
+                      className="clip-slider"
+                      aria-label={t.clip.offset}
+                    />
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         <div className="canvas-wrap">
           <BrainScene
@@ -351,42 +448,6 @@ function Stage({
             imagingTone={imagingTone}
             imagingMode={imagingMode}
           />
-        </div>
-
-        <div className="stage-toolbar">
-          <button
-            type="button"
-            className={autoRotate ? "is-active" : ""}
-            onClick={() => onAutoRotateChange(!autoRotate)}
-            title={t.toolbar.rotateTitle}
-          >
-            <RotateCcw size={20} />
-            {t.toolbar.rotate}
-          </button>
-          <button
-            type="button"
-            className={viewMode === "focus" ? "is-active" : ""}
-            onClick={() => onModeChange(viewMode === "focus" ? "mesh" : "focus")}
-            title={t.toolbar.isolateTitle}
-          >
-            <CircleDot size={20} />
-            {t.toolbar.isolate}
-          </button>
-          <button type="button" onClick={onReset} title={t.toolbar.resetTitle}>
-            <RotateCcw size={20} />
-            {t.toolbar.reset}
-          </button>
-        </div>
-
-        <div className="export-toolbar">
-          <button type="button" onClick={onScreenshot} title={t.toolbar.screenshotTitle}>
-            <Camera size={20} />
-            {t.toolbar.screenshot}
-          </button>
-          <button type="button" onClick={onGlbExport} title={t.toolbar.exportGlbTitle}>
-            <Box size={20} />
-            {t.toolbar.exportGlb}
-          </button>
         </div>
       </section>
     </main>
@@ -587,9 +648,16 @@ function ComparisonModal({ region, language, open, t, onClose }: ComparisonModal
   const comparedRegionName = localize(comparedRegion.name, language);
 
   return (
-    <div className="modal-layer" role="dialog" aria-modal="true" aria-label={t.comparison.dialogLabel}>
-      <div className="comparison-modal">
-        <button className="modal-close" type="button" onClick={onClose}>
+    <div
+      className="modal-layer"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.comparison.dialogLabel}
+      onClick={onClose}
+    >
+      <div className="comparison-modal" onClick={(event) => event.stopPropagation()}>
+        <button className="modal-close" type="button" onClick={onClose} aria-label={t.comparison.close}>
+          <X size={18} />
           {t.comparison.close}
         </button>
         <div className="comparison-modal-head">
@@ -664,7 +732,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("mesh");
   const [clipOrientation, setClipOrientation] = useState<ClipOrientation>("off");
   const [clipOffset, setClipOffset] = useState(0);
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set([initialRegion.id]));
   const [comparisonOpen, setComparisonOpen] = useState(false);
@@ -678,7 +746,6 @@ export default function App() {
 
   const selectedRegion = useMemo(() => getRegionById(selectedRegionId), [selectedRegionId]);
   const selectedRegionName = localize(selectedRegion.name, language);
-  const selectedRegionType = localize(selectedRegion.type, language);
 
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
@@ -787,9 +854,9 @@ export default function App() {
         <div className="center-stack">
           <Stage
             region={selectedRegion}
-            regionName={selectedRegionName}
-            regionType={selectedRegionType}
             activeSubstructure={activeSubstructure}
+            activeImagingPattern={activeImagingPattern}
+            language={language}
             viewMode={viewMode}
             clipOrientation={clipOrientation}
             clipOffset={clipOffset}
@@ -808,16 +875,10 @@ export default function App() {
             }}
             onClipOffsetChange={setClipOffset}
             onAutoRotateChange={setAutoRotate}
+            onCompare={() => setComparisonOpen(true)}
             onReset={handleReset}
             onScreenshot={handleScreenshot}
             onGlbExport={handleGlbExport}
-          />
-          <BottomPanels
-            region={selectedRegion}
-            activeImagingPattern={activeImagingPattern}
-            language={language}
-            t={t}
-            onCompare={() => setComparisonOpen(true)}
             onSelectImaging={(pattern) => {
               const entry = selectedRegion.microscope.find((image) => image.pattern === pattern);
               const label = entry ? getImagingLabel(entry.pattern, entry.label, language) : pattern;

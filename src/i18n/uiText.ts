@@ -7,12 +7,12 @@ export const languageOptions: Array<{ id: Language; label: string }> = [
 
 export const uiText = {
   zh: {
-    documentTitle: "Brain Architecture Studio 中文版",
-    appTitle: "Brain Architecture Studio 中文版",
-    tagline: "从脑区到细节探索皮层结构",
+    documentTitle: "脑结构可视化工作台",
+    appTitle: "脑结构可视化工作台",
+    tagline: "脑区结构与解剖模型浏览",
     languageLabel: "语言",
     panels: {
-      regions: "脑区",
+      regions: "主结构",
       substructures: "子结构",
       details: "子结构详情",
       notes: "神经科学笔记",
@@ -90,7 +90,7 @@ export const uiText = {
     tagline: "Explore the cortex from systems to circuits",
     languageLabel: "Language",
     panels: {
-      regions: "Brain Regions",
+      regions: "Main Structures",
       substructures: "Substructures",
       details: "Substructure Details",
       notes: "Neuroscience Notes",

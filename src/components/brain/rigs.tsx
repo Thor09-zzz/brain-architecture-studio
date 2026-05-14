@@ -4,6 +4,8 @@ import { Group, Scene, Vector3, WebGLRenderer } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { RegionItem } from "../../data/regions";
 
+const FOCUS_DISTANCE_SCALE = 1.52;
+
 export function CaptureContext({
   glRef,
   sceneRef,
@@ -35,11 +37,18 @@ export function CameraRig({
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls) as OrbitControlsImpl | null;
   const pose = useMemo(() => {
+    if (activeSubstructure === region.defaultSubstructure) {
+      return region.camera;
+    }
     const sub = region.substructures.find((s) => s.id === activeSubstructure);
     return sub?.camera ?? region.camera;
   }, [region, activeSubstructure]);
   const targetPos = useMemo(() => new Vector3(...pose.position), [pose]);
   const targetLook = useMemo(() => new Vector3(...pose.target), [pose]);
+  const relaxedTargetPos = useMemo(
+    () => targetLook.clone().add(targetPos.clone().sub(targetLook).multiplyScalar(FOCUS_DISTANCE_SCALE)),
+    [targetLook, targetPos],
+  );
   const animatingRef = useRef(false);
 
   useEffect(() => {
@@ -50,14 +59,14 @@ export function CameraRig({
     if (!animatingRef.current) {
       return;
     }
-    camera.position.lerp(targetPos, 0.08);
+    camera.position.lerp(relaxedTargetPos, 0.08);
     if (controls) {
       controls.target.lerp(targetLook, 0.08);
       controls.update();
     } else {
       camera.lookAt(targetLook);
     }
-    if (camera.position.distanceToSquared(targetPos) < 0.0025) {
+    if (camera.position.distanceToSquared(relaxedTargetPos) < 0.0025) {
       animatingRef.current = false;
     }
   });
